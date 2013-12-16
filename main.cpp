@@ -27,6 +27,7 @@ typedef struct puzzle{
   struct puzzle *one, *two, *three;
   struct puzzle *father;
 } Puzzle;
+
 void print(Puzzle* nodo);
 void shuffle(Puzzle* nodo);
 void isSolution(Puzzle *nodo);
@@ -35,6 +36,7 @@ int h(Puzzle *nodo);// soma dos quadrados que estão em posição invalida
 int h2(Puzzle *nodo); // Manhattan Distancia
 void Astar(Puzzle start);
 
+// Embaralha o tabuleiro
 void shuffle(Puzzle* nodo){
     int rnd,y,x;
     bool n = false;
@@ -174,13 +176,14 @@ void shuffle(Puzzle* nodo){
     
     }
 }
-
+// Verifica se é solução
 void isSolution(Puzzle *nodo){
     if(nodo->board[0][0] == 1 && nodo->board[0][1] == 2 && nodo->board[0][2] == 3 && nodo->board[1][0] == 4 && nodo->board[1][1] == 5 && nodo->board[1][2] == 6 && nodo->board[2][0] == 7 && nodo->board[2][1] == 8 ){
         print(nodo);
         exit(1);
     }
 }
+// Printa o tabuleiro
 void print(Puzzle* nodo){
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -190,6 +193,7 @@ void print(Puzzle* nodo){
     }
     cout << endl;
 }
+
 int h(Puzzle *nodo){
     int soma=0,x=1;
     for (int i = 0; i < 3; i++) {
@@ -217,6 +221,7 @@ int h2(Puzzle *nodo){
         }
     return manhattanDistancia;  
 }
+// Função para copia um tabuleiro de um ponteiro para outro
 void copy(Puzzle* origin, Puzzle* destiny){
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -225,17 +230,20 @@ void copy(Puzzle* origin, Puzzle* destiny){
     }
 
 }
+// A*
 void Astar(Puzzle start){    
-    vector<Puzzle*> opens;
-    opens.push_back(&start);
+    vector<Puzzle*> opens; // Vector de todos os nodos abertos
+    opens.push_back(&start);// Adiciona a raiz ao Vector
     Puzzle *best , auxPuzzle;
     int f = 9999, aux =0, indice,x,y,xf = 3,yf = 3;
     bool found = false;
     while(true){
         xf = 3,yf = 3,f = 9999, y = 3, x =3; // "zera"
-        if(opens.empty()){          
+        if(opens.empty()){// Se o vector está vazio acaba o programa
             exit(1);
         }else{
+            
+            // Acha o tabuleiro que tem a melhor heuristica
             for (int i = 0; i < opens.size(); i++) {
                 aux = h2(opens[i]);
                 if(aux < f){
@@ -244,11 +252,11 @@ void Astar(Puzzle start){
                     indice = i;
                 }
             }        
-            isSolution(best);
-            opens.erase(opens.begin()+indice);
+            isSolution(best); // Verifica se é uma solução, se for, ele encerra o programa
+            opens.erase(opens.begin()+indice); // Se não for, ele retira o tabuleiro do vector
             
             found = false;
-            // Encontra a posição do 0 no melhor nodo
+            // Encontra a posição do 0 no melhor tabuleiro
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     if(best->board[i][j] == 0){  
@@ -264,7 +272,8 @@ void Astar(Puzzle start){
             }
             
             found = false;
-            if(best->father != NULL){
+            if(best->father != NULL){ // Verifica se ele tem pai
+                // Se tiver ele acha a posição do 0 no tabuleiro do pai, para evitar a criação de filhos iguais ao pai
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 3; j++) {
                         if(best->father->board[i][j] == 0){  
@@ -279,10 +288,10 @@ void Astar(Puzzle start){
                     }
                 }
             }
-                
+            // Aloca memoria para o primeiro filho
             best->one = (puzzle*)malloc(sizeof(puzzle));
-            copy(best,best->one);
-               
+            copy(best,best->one); // copia o tabuleiro do melhor para o filho
+            // Cria os filhos diferentes do pai:
             if(x == 0 && y == 0){               
                 if(xf == 0 && yf == 1){
                     best->one->board[x][y] = best->board[1][0];
@@ -291,7 +300,7 @@ void Astar(Puzzle start){
                     best->one->board[x][y] = best->board[0][1];
                     best->one->board[0][1] = 0;                  
                 }
-                opens.push_back(best->one);//retirar                              
+                opens.push_back(best->one);                             
             }else if(x == 0 && y == 1){
                 best->two = (puzzle*)malloc(sizeof(puzzle));
                 copy(best,best->two);
@@ -459,33 +468,39 @@ void Astar(Puzzle start){
        
                 }
                 opens.push_back(best->one);             
-            }       
+            }  
+            
             best->one->father = best;
+            // Apartir daqui os filhos foram criados, seu pai foi definido, e eles foram adicionados ao vector 
         }       
     }
 }
 
 
 int main(int argc, char** argv) {
-    Puzzle* nodoInicial = (puzzle*)malloc(sizeof(puzzle));
+    // Aloca memoria para a raiz
+    Puzzle* root = (puzzle*)malloc(sizeof(puzzle));
     int x=1;
+    // Inicializa ela com a solução
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            nodoInicial->board[i][j] = x;
+            root->board[i][j] = x;
             x++;
         }
     }
-    nodoInicial->board[2][2] = 0;   
-    shuffle(nodoInicial); 
-    print(nodoInicial);
-    
+    root->board[2][2] = 0;  
+    // Embaralha a raiz
+    shuffle(root); 
+    print(root);
+    // Copia a raiz para um tabuleiro auxiliar para passar ao Astar 
     Puzzle start;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            start.board[i][j] = nodoInicial->board[i][j] ;
+            start.board[i][j] = root->board[i][j] ;
             x++;
         }
     }
+    // Chamada do A*
     Astar(start);
     return 0;
 }
